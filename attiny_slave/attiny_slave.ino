@@ -1,4 +1,5 @@
 #include <Wire.h>
+#include <PWM.h>
 
 //pins for PWM, from circuit diagram
 int pwm1 = 3;
@@ -21,6 +22,8 @@ void setup() {
   
   pinMode(3, OUTPUT);
   pinMode(5, OUTPUT);
+
+  InitTimerSafe(); //from PWM library, initializes timers to 0
 }
 
 void parseMsg(char msg[]){
@@ -43,14 +46,18 @@ void parseMsg(char msg[]){
       frequency = 500;
       break;
   }
- 
+
+ SetPinFrequencySafe(pwm1, frequency) //set freq pwm1
+ SetPinFrequencySafe(pwm2, frequency) //set freq pwm2
 }
 void loop() {
   delay(100);
   if (enable == '1') {
-    //send PWM1
-    //send PWM2
-   
+
+    pwmWrite(pwm1, 127) //50% duty cycle pwm1
+    pwmWrite(pwm2, 127) //50% duty cycle pwm2
+    //TODO phase shift
+    
   } else {
     continue; //move back
   }
