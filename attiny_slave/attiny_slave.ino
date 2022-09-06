@@ -3,6 +3,7 @@
 
 #define CLK 16000000UL // 20 mHz or 16 mHz, figure out CLK 
 #define shift 90
+#define PRESCALER 1 //prescaler is a var that scales the timer speed
 
 #define address 0x36 //define slave address, Q: need to <<1 ?  
 
@@ -10,8 +11,8 @@
 int pwm1 = 3;
 int pwm2 = 5;
 
-int pwm1_toggle = null;
-int pwm2_toggle = null;
+unsigned long pwm1_toggle = null;
+unsigned long pwm2_toggle = null;
 
 //incoming msg from master contains 4 bits
 //long msg = null;
@@ -31,6 +32,10 @@ void setup() {
   pinMode(5, OUTPUT);
 
   InitTimerSafe(); //from PWM library, initializes timers to 0
+  TCCR1B = _BV( WGM13) | _BV( WGM12); //turns CTC mode on?
+
+  OCR1A = 0; // set compare match register to 0
+
 }
 
 void parseMsg(char msg[]){
@@ -55,8 +60,9 @@ void parseMsg(char msg[]){
       break;
   }
 
- SetPinFrequencySafe(pwm1, frequency) //set freq pwm1
- SetPinFrequencySafe(pwm2, frequency) //set freq pwm2
+ SetPinFrequencySafe(pwm1, frequency); //set freq pwm1
+ SetPinFrequencySafe(pwm2, frequency); //set freq pwm2
+ 
 }
 void loop() {
   
@@ -70,11 +76,17 @@ void loop() {
     //TODO phase shift
 
     pwm1_toggle = (CLK / frequency) / 2;
+
+    ICR1 = pwm1_toggle
+    
     pwm2_toggle = (pwm1_toggle * SHIFT) / 180UL;
 
-    pwm1 = pwm1_toggle;
-    pwm2 = pwm2_toggle;
+    OCR1B = pwm2_toggle;
     
+   // pwm1 = pwm1_toggle;
+   // pwm2 = pwm2_toggle;
+
+    TCCR1B |= _BV(CS10); //change bit value of cs10 (clock
     
   } else {
     continue; //move back
