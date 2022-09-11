@@ -1,37 +1,43 @@
 #include <Wire.h>
-#include <PWM.h>
 
-#define CLK 16000000UL
-#define shift 90
-#define PRESCALER 1
+#define SLAVE_ADDRESS 0x36
+#define MEM_ADDRESS 0x3F00 //SRAM
 
-#define address 0x36
-
-int LED_PIN = 3;
+int LED_PIN = 4;
 
 void setup() {
   
-  Wire.begin(address);
+  Wire.begin(SLAVE_ADDRESS);
   pinMode(LED_PIN, OUTPUT);
-  
-}
+  Serial.begin(9600);
 
-void parseMsg(char msg[]) {
-  
-  boolean ledOn = msg[0];
-
-  if (ledOn) {
-    digitalWrite(LED_PIN, HIGH);
-  } else {
-    digitalWrite(LED_PIN, LOW);
-  }
-  
-  
+  Wire.onReceive(parseMsg);
 }
 
 void loop() {
+ 
+  delay(100);
+}
 
-  Wire.onReceive(parseMsg);
+
+void parseMsg(int eventNum) {
   
+  while (1 < Wire.available()) { //if there is still more than 1 byte in the buffer
 
+    char c = Wire.read();
+    if (c == '00000001') {
+      digitalWrite(LED_PIN, HIGH);
+      delay(1000);
+      digitalWrite(LED_PIN, LOW);
+    }
+  }
+  
+  int x = Wire.read();
+  if(x = B00000001) {
+    digitalWrite(LED_PIN, HIGH);
+    delay(1000);
+    digitalWrite(LED_PIN, LOW);
+  }
+ 
+  
 }
