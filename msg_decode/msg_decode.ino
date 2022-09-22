@@ -5,6 +5,12 @@
 
 int LED_PIN = 4;
 int numTransactions = 1;
+boolean led_status = false;
+
+int dig1 = 0
+int dig2 = 0
+int dig3 = 0
+
 void setup() {
   
   Wire.begin(SLAVE_ADDRESS);
@@ -24,28 +30,28 @@ void loop() {
 
 void parseMsg(int eventNum) {
   
-  /*while (1 < Wire.available()) { //if there is still more than 1 byte in the buffer
-
-    char c = Wire.read();
-    if (c == '00000001') {
-      if (numTransactions == 0) {
-        digitalWrite(LED_PIN, HIGH);
-      } else {
-        digitalWrite(LED_PIN, LOW);
-      }
-      
-      numTransactions = numTransactions + 1;
-    }
-  }*/
-  
   int x = Wire.read();
-  //if(x = B00000001) {
-      if (numTransactions % 2 == 0) {
-        digitalWrite(LED_PIN, HIGH);
-      } else {
-        digitalWrite(LED_PIN, LOW);
-      }
-      
-      numTransactions = numTransactions + 1;
-  //}
+  
+  char buf[100];
+  sprintf(buf, %03i, x); //separates integers into chars
+
+  dig1 = buf[0]
+  dig2 = buf[1]
+  dig3 = buf[2]
+
+  if (dig1 != 0 && dig2 != 0 && dig3 != 0) {
+    digitalWrite(LED_PIN, !led_status);
+  }
+  
+  
+  
+//  //if(x = B00000001) {
+//      if (numTransactions % 2 == 0) {
+//        digitalWrite(LED_PIN, HIGH);
+//      } else {
+//        digitalWrite(LED_PIN, LOW);
+//      }
+//      
+//      numTransactions = numTransactions + 1;
+//  //}
 }
