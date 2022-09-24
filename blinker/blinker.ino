@@ -4,7 +4,7 @@
 #define MEM_ADDRESS 0x3F00 //SRAM
 
 int LED_PIN = 4;
-
+int numTransactions = 1;
 void setup() {
   
   Wire.begin(SLAVE_ADDRESS);
@@ -12,6 +12,7 @@ void setup() {
   Serial.begin(9600);
 
   Wire.onReceive(parseMsg);
+  
 }
 
 void loop() {
@@ -20,24 +21,33 @@ void loop() {
 }
 
 
+
 void parseMsg(int eventNum) {
   
-  while (1 < Wire.available()) { //if there is still more than 1 byte in the buffer
+  /*while (1 < Wire.available()) { //if there is still more than 1 byte in the buffer
 
     char c = Wire.read();
     if (c == '00000001') {
-      digitalWrite(LED_PIN, HIGH);
-      delay(1000);
-      digitalWrite(LED_PIN, LOW);
+      if (numTransactions == 0) {
+        digitalWrite(LED_PIN, HIGH);
+      } else {
+        digitalWrite(LED_PIN, LOW);
+      }
+      
+      numTransactions = numTransactions + 1;
     }
-  }
+  }*/
   
   int x = Wire.read();
-  if(x = B00000001) {
-    digitalWrite(LED_PIN, HIGH);
-    delay(1000);
-    digitalWrite(LED_PIN, LOW);
-  }
- 
-  
+  Serial.print(x);
+  //if(x = B00000001) {
+  /*    if (numTransactions % 2 == 0) {
+        digitalWrite(LED_PIN, HIGH);
+      } else {
+        digitalWrite(LED_PIN, LOW);
+      }
+      
+      numTransactions = numTransactions + 1;
+      */
+  //}
 }
