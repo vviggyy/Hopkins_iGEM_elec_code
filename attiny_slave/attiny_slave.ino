@@ -11,84 +11,180 @@
 int pwm1 = 3;
 int pwm2 = 5;
 
-unsigned long pwm1_toggle = null;
-unsigned long pwm2_toggle = null;
+//enable pin
+int enablePin = 0;
+
+// millisecond counters
+int ms = 0;
+int curMs = 0;
+
+// unsigned long pwm1_toggle = null;
+// unsigned long pwm2_toggle = null;
 
 //incoming msg from master contains 4 bits
 //long msg = null;
 
-boolean enable = null; // 1 bit
-int freqOpt = null; // 2 bits {0: 0 kHz, 1: 167 kHz, 2: 333 kHz, 500 kHz} 
-boolean wave = null; // 1 bit {true: step wave, false: DC performance wave}
+boolean enable = 0; // 1 bit
+int freqOpt = 0; // 2 bits {0: 0 kHz, 1: 167 kHz, 2: 333 kHz, 500 kHz} 
+boolean wave = 0; // 1 bit {true: step wave, false: DC performance wave}
 
-int frequency = null;
+int frequency = 0;
 
 
 void setup() {
   
   Wire.begin(address);
   
-  pinMode(3, OUTPUT);
-  pinMode(5, OUTPUT);
+  pinMode(enablePin, OUTPUT); //enable 
+  pinMode(3, OUTPUT); // pwm1
+  pinMode(5, OUTPUT); // pwm2 
 
-  InitTimerSafe(); //from PWM library, initializes timers to 0
-  TCCR1B = _BV( WGM13) | _BV( WGM12); //turns CTC mode on?
+  // InitTimerSafe(); //from PWM library, initializes timers to 0
+  // TCCR1B = _BV( WGM13) | _BV( WGM12); //turns CTC mode on?
 
-  OCR1A = 0; // set compare match register to 0
+  // OCR1A = 0; // set compare match register to 0
 
 }
 
-void parseMsg(char msg[]){
+void parseMsg(int msg) {
   
-  enable = msg[0]
-  freqOpt = strtol(msg[1:2], NULL, 2); //receive a standard i2c message as length of 8 bytes, parse that not a string 
-  //check if first four bits and last four bits are equal and if message is garbled then ignore
-  wave = msg[3]
+  // enable = msg[0]
+  // freqOpt = strtol(msg[1:2], NULL, 2); //receive a standard i2c message as length of 8 bytes, parse that not a string 
+  // //check if first four bits and last four bits are equal and if message is garbled then ignore
+  // wave = msg[3]
 
-  switch(freqOpt){
+  // switch(freqOpt){
+  //   case 0:
+  //     frequency = 0;
+  //     break;
+  //   case 1:
+  //     frequency = 167;
+  //     break;
+  //   case 2: 
+  //     frequency = 333;
+  //     break;
+  //   case 3:
+  //     frequency = 500;
+  //     break;
+  // }
+
+ switch (msg) { //need to do wave type thing
     case 0:
-      frequency = 0;
+      createPWM(false, 0);
       break;
     case 1:
-      frequency = 167;
+      createPWM(false, 0);
       break;
-    case 2: 
-      frequency = 333;
+    case 2:
+      createPWM(false, 167);
       break;
     case 3:
-      frequency = 500;
+      createPWM(false, 167);
       break;
-  }
+    case 4:
+      createPWM(false, 333);
+      break;
+    case 5:
+      createPWM(false, 333);
+      break;
+    case 6:
+      createPWM(false, 487);
+      break;
+    case 7:
+      createPWM(false, 487);
+      break;
+    case 8:
+      createPWM(true, 0);
+      break;
+    case 9:
+      createPWM(true, 0);
+      break;
+    case 10:
+      createPWM(true, 167);
+      break;
+    case 11:
+      createPWM(true, 167);
+      break;
+    case 12:
+      createPWM(true, 333);
+      break;
+    case 13:
+      createPWM(true, 333);
+      break;
+    case 14:
+      createPWM(true, 487);
+      break;
+    case 15:
+      createPWM(true, 487);
+      break;
+    default: //else do nothing
+      createPWM(false, 0);
+      break;
 
- SetPinFrequencySafe(pwm1, frequency); //set freq pwm1
- SetPinFrequencySafe(pwm2, frequency); //set freq pwm2
+    return;
+   
+ }
  
 }
+
+void createPWM(bool enable, int frequency) { //set frequencies
+
+  if (enable) {
+    digitalWrite(enablePin, HIGH);
+  } else {
+    digitalWrite(enablePin, LOW);
+  }
+  
+  SetPinFrequencySafe(pwm1, frequency); //set freq pwm1
+  SetPinFrequencySafe(pwm2, frequency); //set freq pwm2
+
+
+}
+
 void loop() {
   
-  Wire.onReceive(parseMsg); //type check; receive as string or bits?
+  int msg = Wire.read();
+  parseMsg(msg);
 
-  delay(100);
-  if (enable == '1') {
+  digitalWrite(pwm1, HIGH);
+  ms = millis();
 
-    //pwmWrite(pwm1, 127) //50% duty cycle pwm1
-    //pwmWrite(pwm2, 127) //50% duty cycle pwm2
-    //TODO phase shift
+  //PWM2 starts with 90 degrees phase shift from PWM1
+  //frequency / 1000 = cycles/ms 
+  //frequency / 4000 = fourth of a cycle/ms 
+  //once current milliseconds tracker has passed 1/4 of cycle, start pwm2 (90 degrees phase shift)
 
-    pwm1_toggle = (CLK / frequency) / 2;
-
-    ICR1 = pwm1_toggle
-    
-    pwm2_toggle = (pwm1_toggle * SHIFT) / 180UL;
-
-    OCR1B = pwm2_toggle;
-    
-   // pwm1 = pwm1_toggle;
-   // pwm2 = pwm2_toggle;
-
-    TCCR1B |= _BV(CS10); //change bit value of cs10 (clock
-    
-  } else {
-    continue; //move back
+  if (ms >= frequency/4000) {  
+    digitalWrite(pwm2, HIGH);
   }
+
+  if (ms >= frequency/2000) {
+    digitalWrite(pwm1, LOW);
+  }
+
+  if (ms >= (3 * frequency)/4000) {
+    digitalWrite(pwm2, LOW);
+  }
+
+
+  
+  // if (enable == '1') {
+
+  //   //pwmWrite(pwm1, 127) //50% duty cycle pwm1
+  //   //pwmWrite(pwm2, 127) //50% duty cycle pwm2
+  //   //TODO phase shift
+
+  //   pwm1_toggle = (CLK / frequency) / 2;
+
+  //   ICR1 = pwm1_toggle
+    
+  //   pwm2_toggle = (pwm1_toggle * SHIFT) / 180UL;
+
+  //   OCR1B = pwm2_toggle;
+    
+  //  // pwm1 = pwm1_toggle;
+  //  // pwm2 = pwm2_toggle;
+
+  //   TCCR1B |= _BV(CS10); //change bit value of cs10 (clock
+    
 }
