@@ -153,14 +153,14 @@ void loop() {
   // parseMsg(msg);
 
   ms = millis();
-  ms2 = millis();
+  ms2 = millis() + 500;
 
-  if (ms % 1000 == 0) {
+  if (abs(ms % 1000) > 200) {
     digitalWrite(4, !ledState);
   }
   ledState = !ledState; 
 
-  if ((ms2 % 500 == 0) && (ms2 % 1000 != 0)) {
+  if (abs(ms2 % 1000) > 200) {
     digitalWrite(1, !ledState2);
   }
   ledState2 = !ledState2;
