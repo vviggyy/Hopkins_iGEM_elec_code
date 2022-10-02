@@ -8,7 +8,7 @@
 
 //pins for PWM, from circuit diagram
 int pwm1 = 4;
-int pwm2 = 5;
+int pwm2 = 1;
 
 //enable pin
 int enablePin = 0;
@@ -18,6 +18,7 @@ int ms = 0;
 int curMs = 0;
 
 bool ledState = 0;
+bool ledState2 = 0;
 
 // unsigned long pwm1_toggle = null;
 // unsigned long pwm2_toggle = null;
@@ -46,6 +47,7 @@ void setup() {
   // OCR1A = 0; // set compare match register to 0
 
   digitalWrite(pwm1, HIGH); 
+  digitalWrite(pwm2, HIGH);
 
 }
 
@@ -150,10 +152,17 @@ void loop() {
   // parseMsg(msg);
 
   ms = millis();
+  ms2 = millis();
 
-  if (ms % 1000) {
+  if (ms % 1000 == 0) {
     digitalWrite(4, !ledState);
   }
+  ledState = !ledState; 
+
+  if ((ms2 % 500 == 0) && (ms2 % 1000 != 0)) {
+    digitalWrite(1, !ledState2);
+  }
+  ledState2 = !ledState2;
 
   //PWM2 starts with 90 degrees phase shift from PWM1
   //frequency / 1000 = cycles/ms 
