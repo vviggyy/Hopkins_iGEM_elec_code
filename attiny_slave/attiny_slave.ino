@@ -1,3 +1,5 @@
+#include <PWM.h>
+
 #include <Wire.h>
 #include <PWM.h>
 
@@ -8,7 +10,7 @@
 #define address 0x36 //define slave address, Q: need to <<1 ?  
 
 //pins for PWM, from circuit diagram
-int pwm1 = 3;
+int pwm1 = 4;
 int pwm2 = 5;
 
 //enable pin
@@ -36,7 +38,7 @@ void setup() {
   Wire.begin(address);
   
   pinMode(enablePin, OUTPUT); //enable 
-  pinMode(3, OUTPUT); // pwm1
+  pinMode(4, OUTPUT); // pwm1
   pinMode(5, OUTPUT); // pwm2 
 
   // InitTimerSafe(); //from PWM library, initializes timers to 0
@@ -135,8 +137,8 @@ void createPWM(bool enable, int frequency) { //set frequencies
     digitalWrite(enablePin, LOW);
   }
   
-  // SetPinFrequencySafe(pwm1, frequency); //set freq pwm1
-  // SetPinFrequencySafe(pwm2, frequency); //set freq pwm2
+  SetPinFrequencySafe(pwm1, frequency); //set freq pwm1
+  SetPinFrequencySafe(pwm2, frequency); //set freq pwm2
 
 
 }
