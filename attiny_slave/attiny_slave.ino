@@ -135,8 +135,8 @@ void createPWM(bool enable, int frequency) { //set frequencies
     digitalWrite(enablePin, LOW);
   }
   
-  SetPinFrequencySafe(pwm1, frequency); //set freq pwm1
-  SetPinFrequencySafe(pwm2, frequency); //set freq pwm2
+  // SetPinFrequencySafe(pwm1, frequency); //set freq pwm1
+  // SetPinFrequencySafe(pwm2, frequency); //set freq pwm2
 
 
 }
