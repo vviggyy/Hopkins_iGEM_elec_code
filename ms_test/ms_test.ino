@@ -1,11 +1,10 @@
-// #include <PWM.h>
 #include <Wire.h>
 
 #define CLK 16000000UL // 20 mHz or 16 mHz, figure out CLK 
 #define shift 90
 #define PRESCALER 1 //prescaler is a var that scales the timer speed
 
-#define address 0x36; //define slave address, Q: need to <<1 ?  
+#define address 0x36 //define slave address, Q: need to <<1 ?  
 
 //pins for PWM, from circuit diagram
 int pwm1 = 4;
@@ -18,7 +17,7 @@ int enablePin = 0;
 int ms = 0;
 int curMs = 0;
 
-bool ledState = 0
+bool ledState = 0;
 
 // unsigned long pwm1_toggle = null;
 // unsigned long pwm2_toggle = null;
@@ -139,8 +138,8 @@ void createPWM(bool enable, int frequency) { //set frequencies
     digitalWrite(enablePin, LOW);
   }
   
-  SetPinFrequencySafe(pwm1, frequency); //set freq pwm1
-  SetPinFrequencySafe(pwm2, frequency); //set freq pwm2
+  //SetPinFrequencySafe(pwm1, frequency); //set freq pwm1
+  //SetPinFrequencySafe(pwm2, frequency); //set freq pwm2
 
 
 }
