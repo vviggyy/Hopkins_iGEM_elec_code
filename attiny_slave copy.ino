@@ -1,13 +1,11 @@
-#include <PWM.h>
-
+// #include <PWM.h>
 #include <Wire.h>
-#include <PWM.h>
 
 #define CLK 16000000UL // 20 mHz or 16 mHz, figure out CLK 
 #define shift 90
 #define PRESCALER 1 //prescaler is a var that scales the timer speed
 
-#define address 0x36 //define slave address, Q: need to <<1 ?  
+#define address 0x36; //define slave address, Q: need to <<1 ?  
 
 //pins for PWM, from circuit diagram
 int pwm1 = 4;
@@ -20,7 +18,7 @@ int enablePin = 0;
 int ms = 0;
 int curMs = 0;
 
-bool ledState = 0;
+bool ledState = 0
 
 // unsigned long pwm1_toggle = null;
 // unsigned long pwm2_toggle = null;
@@ -48,8 +46,7 @@ void setup() {
 
   // OCR1A = 0; // set compare match register to 0
 
-  digitalWrite(pwm1, HIGH);
-
+  digitalWrite(pwm1, HIGH); 
 
 }
 
@@ -142,36 +139,39 @@ void createPWM(bool enable, int frequency) { //set frequencies
     digitalWrite(enablePin, LOW);
   }
   
-  // SetPinFrequencySafe(pwm1, frequency); //set freq pwm1
-  // SetPinFrequencySafe(pwm2, frequency); //set freq pwm2
+  SetPinFrequencySafe(pwm1, frequency); //set freq pwm1
+  SetPinFrequencySafe(pwm2, frequency); //set freq pwm2
 
 
 }
 
 void loop() {
   
-  int msg = Wire.read();
-  parseMsg(msg);
+  // int msg = Wire.read();
+  // parseMsg(msg);
 
-  digitalWrite(pwm1, HIGH);
   ms = millis();
+
+  if (ms % 1000) {
+    digitalWrite(4, !ledState);
+  }
 
   //PWM2 starts with 90 degrees phase shift from PWM1
   //frequency / 1000 = cycles/ms 
   //frequency / 4000 = fourth of a cycle/ms 
   //once current milliseconds tracker has passed 1/4 of cycle, start pwm2 (90 degrees phase shift)
 
-  if (ms >= frequency/4000) {  
-    digitalWrite(pwm2, HIGH);
-  }
+  // if (ms >= frequency/4000) {  
+  //   digitalWrite(pwm2, HIGH);
+  // }
 
-  if (ms >= frequency/2000) {
-    digitalWrite(pwm1, LOW);
-  }
+  // if (ms >= frequency/2000) {
+  //   digitalWrite(pwm1, LOW);
+  // }
 
-  if (ms >= (3 * frequency)/4000) {
-    digitalWrite(pwm2, LOW);
-  }
+  // if (ms >= (3 * frequency)/4000) {
+  //   digitalWrite(pwm2, LOW);
+  // }
 
 
   
