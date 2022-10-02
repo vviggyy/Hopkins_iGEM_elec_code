@@ -15,6 +15,7 @@ int enablePin = 0;
 
 // millisecond counters
 int ms = 0;
+int ms2 = 0;
 int curMs = 0;
 
 bool ledState = 0;
