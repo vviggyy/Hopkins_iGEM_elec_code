@@ -1,4 +1,5 @@
 #include <Wire.h>
+#include <PWM.h>
 
 #define CLK 16000000UL // 20 mHz or 16 mHz, figure out CLK 
 #define shift 90
@@ -17,6 +18,14 @@ int enablePin = 0;
 int ms = 0;
 int ms2 = 0;
 int curMs = 0;
+
+
+unsigned long currentTime = 0;
+unsigned long previousTime = 0;
+const unsigned long eventInterval = 1000;
+
+
+
 
 bool ledState = 0;
 bool ledState2 = 0;
@@ -37,19 +46,19 @@ int frequency = 0;
 void setup() {
   
   Wire.begin(address);
-  
+
   pinMode(enablePin, OUTPUT); //enable 
   pinMode(4, OUTPUT); // pwm1
   pinMode(5, OUTPUT); // pwm2 
 
-  // InitTimerSafe(); //from PWM library, initializes timers to 0
-  // TCCR1B = _BV( WGM13) | _BV( WGM12); //turns CTC mode on?
-
-  // OCR1A = 0; // set compare match register to 0
-
   digitalWrite(pwm1, HIGH); 
-  digitalWrite(pwm2, HIGH);
+  //digitalWrite(pwm2, HIGH);
+  
+}
 
+void blink() {
+  ledState = !ledState;
+  digitalWrite(pwm1, ledState);
 }
 
 void parseMsg(int msg) {
@@ -58,21 +67,6 @@ void parseMsg(int msg) {
   // freqOpt = strtol(msg[1:2], NULL, 2); //receive a standard i2c message as length of 8 bytes, parse that not a string 
   // //check if first four bits and last four bits are equal and if message is garbled then ignore
   // wave = msg[3]
-
-  // switch(freqOpt){
-  //   case 0:
-  //     frequency = 0;
-  //     break;
-  //   case 1:
-  //     frequency = 167;
-  //     break;
-  //   case 2: 
-  //     frequency = 333;
-  //     break;
-  //   case 3:
-  //     frequency = 500;
-  //     break;
-  // }
 
  switch (msg) { //need to do wave type thing
     case 0:
@@ -141,48 +135,53 @@ void createPWM(bool enable, int frequency) { //set frequencies
     digitalWrite(enablePin, LOW);
   }
   
-  //SetPinFrequencySafe(pwm1, frequency); //set freq pwm1
-  //SetPinFrequencySafe(pwm2, frequency); //set freq pwm2
+  SetPinFrequencySafe(pwm1, frequency); //set freq pwm1
+  SetPinFrequencySafe(pwm2, frequency); //set freq pwm2
 
 
 }
 
 void loop() {
+
+  currentTime = millis();
+
+  if(currentTime - previousTime >= eventInterval) {
+    digitalWrite(4, !ledState);
+  }
+
+  previousTime = currentTime;
   
   // int msg = Wire.read();
   // parseMsg(msg);
 
-  ms = millis();
-  ms2 = millis() + 500;
+  // ms = millis();
 
-  if (abs(ms % 1000) > 200) {
-    digitalWrite(4, !ledState);
-  }
-  ledState = !ledState; 
-
-  if (abs(ms2 % 1000) > 200) {
-    digitalWrite(1, !ledState2);
-  }
-  ledState2 = !ledState2;
-
-  //PWM2 starts with 90 degrees phase shift from PWM1
-  //frequency / 1000 = cycles/ms 
-  //frequency / 4000 = fourth of a cycle/ms 
-  //once current milliseconds tracker has passed 1/4 of cycle, start pwm2 (90 degrees phase shift)
-
-  // if (ms >= frequency/4000) {  
-  //   digitalWrite(pwm2, HIGH);
+  // if (abs(ms % 1000) > 200) {
+  //   digitalWrite(4, !ledState);    
   // }
+  // ledState = !ledState; 
 
-  // if (ms >= frequency/2000) {
-  //   digitalWrite(pwm1, LOW);
+  // if (abs((ms + 500) % 1000) > 200) {
+  //   digitalWrite(1, !ledState2);
   // }
+  // ledState2 = !ledState2;
 
-  // if (ms >= (3 * frequency)/4000) {
-  //   digitalWrite(pwm2, LOW);
-  // }
+  // //PWM2 starts with 90 degrees phase shift from PWM1
+  // //frequency / 1000 = cycles/ms 
+  // //frequency / 4000 = fourth of a cycle/ms 
+  // //once current milliseconds tracker has passed 1/4 of cycle, start pwm2 (90 degrees phase shift)
 
+  // // if (ms >= frequency/4000) {  
+  // //   digitalWrite(pwm2, HIGH);
+  // // }
 
+  // // if (ms >= frequency/2000) {
+  // //   digitalWrite(pwm1, LOW);
+  // // }
+
+  // // if (ms >= (3 * frequency)/4000) {
+  // //   digitalWrite(pwm2, LOW);
+  // // }
   
   // if (enable == '1') {
 
