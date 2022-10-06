@@ -15,8 +15,8 @@ int pwm2 = 1;
 int enablePin = 0;
 
 // millisecond counters
-int ms = 0;
-int ms2 = 0;
+long ms = 0;
+long ms2 = 0;
 int curMs = 0;
 
 
@@ -41,7 +41,7 @@ int freqOpt = 0; // 2 bits {0: 0 kHz, 1: 167 kHz, 2: 333 kHz, 500 kHz}
 bool wave = 0; // 1 bit {true: step wave, false: DC performance wave}
 
 int frequency = 0;
-
+unsigned int remainder = 9999;
 
 void setup() {
   
@@ -135,35 +135,42 @@ void createPWM(bool enable, int frequency) { //set frequencies
     digitalWrite(enablePin, LOW);
   }
   
-  SetPinFrequencySafe(pwm1, frequency); //set freq pwm1
-  SetPinFrequencySafe(pwm2, frequency); //set freq pwm2
+  //SetPinFrequencySafe(pwm1, frequency); //set freq pwm1
+  //SetPinFrequencySafe(pwm2, frequency); //set freq pwm2
 
 
 }
 
 void loop() {
 
-  currentTime = millis();
+  // currentTime = millis();
 
-  if(currentTime - previousTime >= eventInterval) {
-    digitalWrite(4, !ledState);
+  // if(currentTime - previousTime >= eventInterval) {
+  //   digitalWrite(4, !ledState);
+  // }
+
+  // previousTime = currentTime;
+  
+  int msg = Wire.read();
+  parseMsg(msg);
+
+  ms = millis();
+  ms2 = ms + 500;
+
+  
+  if (remainder < 200 && remainder != ms % 1000) {
+    digitalWrite(4, !ledState); 
+    ledState = !ledState;   
   }
 
-  previousTime = currentTime;
+  remainder = ms % 1000;
   
-  // int msg = Wire.read();
-  // parseMsg(msg);
+   
 
-  // ms = millis();
-
-  // if (abs(ms % 1000) > 200) {
-  //   digitalWrite(4, !ledState);    
-  // }
-  // ledState = !ledState; 
-
-  // if (abs((ms + 500) % 1000) > 200) {
+  // if (abs(ms2 % 1000000) < 200000) {
   //   digitalWrite(1, !ledState2);
   // }
+  
   // ledState2 = !ledState2;
 
   // //PWM2 starts with 90 degrees phase shift from PWM1
