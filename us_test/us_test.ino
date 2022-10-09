@@ -16,7 +16,7 @@ int enablePin = 0;
 
 // millisecond counters
 long us = 0;
-long ms2 = 0;
+long us2 = 0;
 int curMs = 0;
 
 
@@ -46,6 +46,7 @@ int frequency = 0;
 
 long remainder = 999999999;
 long elapsed = 0;
+long elapsed2 = 0;
 
 void setup() {
   
@@ -162,11 +163,23 @@ void loop() {
   //ms2 = ms + 500;
 
   us = micros();
+  us2 = us + 500000;
+
   if (us % 1000000 < 200000 && us - elapsed > 200000) {
     digitalWrite(4, !ledState); 
     ledState = !ledState;
     elapsed = us;   
   }
+
+  if (us2 % 1000000 < 200000 && us2 - elapsed2 > 200000) {
+    digitalWrite(1, !ledState2);
+    ledState2 = !ledState2;
+    elapsed2 = us2;
+  }
+
+  //test two pwms 1hz
+  //test different frequencies 
+  //test variable
 
   
   //remainder = us % 1000000;
