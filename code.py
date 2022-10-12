@@ -2,6 +2,7 @@ import board
 import displayio
 import terminalio
 import time
+import binascii
 from digitalio import DigitalInOut, Direction, Pull
 
 # can try import bitmap_label below for alternative
@@ -10,6 +11,11 @@ import adafruit_displayio_sh1107
 
 displayio.release_displays()
 # oled_reset = board.D9
+
+# addresses
+adc_addr = 84
+rheostat_addr = 44
+mc1_address = 54
 
 # Define i2c commands
 def i2c_read_reg(i2cbus, addr, reg, result):
@@ -33,6 +39,27 @@ def i2c_write_reg(i2cbus, addr, reg, data):
         i2cbus.writeto(addr, buf)
     finally:
         i2cbus.unlock()
+
+def read_current(i2c, addr, n):
+    while not i2c.try_lock():
+        pass
+    x = 0
+    voltages = []
+    while x < n:
+        result = bytearray(2)
+        i2c.readfrom_into(addr, result)
+        bitstring = str(bin(int(binascii.hexlify(result).decode(),16)))
+        if len(bitstring) < 14:
+            adc_reading = int(bitstring[2:-2],2)
+        else:
+            n = len(bitstring) - 12
+            adc_reading = int(bitstring[n:-2],2)
+        voltages.append(5*adc_reading/1023)
+        x+=1
+    i2c.unlock()
+    Vavg = sum(voltages)/len(voltages)
+    Iavg = 10*Vavg - 25
+    return Iavg
 
 # OLED buttons
 A = DigitalInOut(board.D9)
@@ -78,19 +105,6 @@ inner_sprite = displayio.TileGrid(
     inner_bitmap, pixel_shader=inner_palette, x=BORDER, y=BORDER
 )
 splash.append(inner_sprite)
-
-# Draw some white squares
-sm_bitmap = displayio.Bitmap(8, 8, 1)
-sm_square = displayio.TileGrid(sm_bitmap, pixel_shader=color_palette, x=58, y=17)
-#splash.append(sm_square)
-
-med_bitmap = displayio.Bitmap(16, 16, 1)
-med_square = displayio.TileGrid(med_bitmap, pixel_shader=color_palette, x=71, y=15)
-#splash.append(med_square)
-
-lrg_bitmap = displayio.Bitmap(32, 32, 1)
-lrg_square = displayio.TileGrid(lrg_bitmap, pixel_shader=color_palette, x=91, y=28)
-#splash.append(lrg_square)
 
 # button test
 stop = False
@@ -192,12 +206,6 @@ while not stop:
     splash.pop(-1)
     splash.pop(-1)
     print(enable+frequency+wave_type)
-    # Draw some label text
-    #text1 = "Amogus"  # overly long to see where it clips
-    #text_area = label.Label(terminalio.FONT, text=text1, color=0xFFFFFF, x=8, y=8)
-    #splash.append(text_area)
-    #text_area = label.Label(terminalio.FONT, text="we have:", color=0xFFFFFF, x=8, y=20)
-    #splash.append(text_area)
 
     text2 = "Command submitted:"
     text_area2 = label.Label(
@@ -219,6 +227,33 @@ while not stop:
     text1 = "Current: "+enable+frequency+wave_type  # overly long to see where it clips
     text_area = label.Label(terminalio.FONT, text=text1, color=0xFFFFFF, x=8, y=20)
     splash.append(text_area)
+
+    # Scan for devices
+    while not i2c.try_lock():
+        pass
+
+    a = []
+
+    while len(a) == 0:
+        time.sleep(3)
+        a = [hex(x) for x in i2c.scan()]
+
+    print(a)
+    i2c.unlock()
+
+    # Send command to microcontroller
+    mc_cmd = int(enable + frequency + wave_type,2)
+    print(mc_cmd)
+
+    if 0x36 in a:
+        while not i2c.try_lock():
+            pass
+        i2c.writeto(mc1_address,bytes([mc_cmd]))
+        i2c.unlock()
+
+    time.sleep(10)
+    current = read_current(i2c, adc_addr, 10)
+
     text1 = "Press A to edit"  # overly long to see where it clips
     text_area = label.Label(terminalio.FONT, text=text1, color=0xFFFFFF, x=8, y=38)
     splash.append(text_area)
@@ -226,10 +261,13 @@ while not stop:
     text_area = label.Label(terminalio.FONT, text=text1, color=0xFFFFFF, x=8, y=50)
     splash.append(text_area)
     option = ""
+
     while len(option) == 0:
         A.pull = Pull.UP
         B.pull = Pull.UP
         if not A.value:
+            splash.pop(-1)
+            splash.pop(-1)
             splash.pop(-1)
             splash.pop(-1)
             option = "a"
@@ -237,56 +275,52 @@ while not stop:
             stop = True
             option = "b"
 
-        # Scan for devices
-        while not i2c.try_lock():
-            pass
-
-        a = [hex(x) for x in i2c.scan()]
-
-        while len(a) == 0:
-            time.sleep(3)
-            a = [hex(x) for x in i2c.scan()]
-
-        print(a)
-        i2c.unlock()
-
-        # Send command to microcontroller
-
-        mc1_address = 54
-        mc1_reg = 40
-
-        binary = [
-            "0000",
-            "0001",
-            "0010",
-            "0011",
-            "0100",
-            "0101",
-            "0110",
-            "0111",
-            "1000",
-            "1001",
-            "1010",
-            "1011",
-            "1100",
-            "1101",
-            "1110",
-            "1111",
-        ]
-
-        mc_cmd = binary.index((enable + frequency + wave_type))
-        print(mc_cmd)
-        #print(hex(mc1_reg))
-        #i2c_write_reg(i2c, mc1_address, mc1_reg, bytes([0, mc_cmd]))
-
-        while not i2c.try_lock():
-            pass
-        i2c.writeto(mc1_address,bytes([mc_cmd]))
-        i2c.unlock()
-
         # Adjust rheostat resistance
 
+        if current < 0.3:
+            print(current)
+            print("Coils not started")
+            option = "a"
+            splash.pop(-1)
+            splash.pop(-1)
+            splash.pop(-1)
+            splash.pop(-1)
+            text1 = "Coils not active"  # overly long to see where it clips
+            text_area = label.Label(terminalio.FONT, text=text1, color=0xFFFFFF, x=8, y=20)
+            splash.append(text_area)
+            text1 = "Try again"  # overly long to see where it clips
+            text_area = label.Label(terminalio.FONT, text=text1, color=0xFFFFFF, x=8, y=32)
+            splash.append(text_area)
+            time.sleep(3)
+            splash.pop(-1)
+            splash.pop(-1)
 
+        if current > 15:
+            #stop if current too high
+            while not i2c.try_lock():
+                pass
+            i2c.writeto(mc1_address,bytes([0]))
+            i2c.unlock()
+
+        while current > 11:
+            print(current)
+            while not i2c.try_lock():
+                pass
+            i2c.writeto(rheostat_addr, bytes([4]))
+            i2c.writeto(rheostat_addr, bytes([20]))
+            i2c.unlock()
+            current = read_current(i2c, adc_addr, 10)
+
+        while current < 8 and current > 0.3:
+            print(current)
+            while not i2c.try_lock():
+                pass
+            i2c.writeto(rheostat_addr, bytes([8]))
+            i2c.writeto(rheostat_addr, bytes([24]))
+            i2c.unlock()
+            current = read_current(i2c, adc_addr, 10)
+
+        current = read_current(i2c, adc_addr, 10)
 
         pass
     pass
