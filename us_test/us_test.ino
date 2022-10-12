@@ -3,10 +3,6 @@
 
 #define address 0x36 //define slave address, Q: need to <<1 ?  
 
-//pins for PWM, from circuit diagram
-int pwm1 = 4;
-int pwm2 = 1;
-
 //enable pin
 int enablePin = 0;
 
@@ -14,22 +10,20 @@ int enablePin = 0;
 long us = 0;
 long us2 = 0;
 
-
 bool ledState = 0;
 bool ledState2 = 0;
 
-
 bool enable = 0; // 1 bit
-
-int frequency = 0;
 
 long elapsed = 0;
 long elapsed2 = 0;
 
 //us per cycle
-long threshold = 0;
+int frequency = 0;
+long threshold = 10;
+long buffer = 0;
 
-long buffer =0;
+int msg = -1;
 
 void setup() {
   
@@ -37,11 +31,20 @@ void setup() {
 
   pinMode(enablePin, OUTPUT); //enable 
   pinMode(4, OUTPUT); // pwm1
-  pinMode(5, OUTPUT); // pwm2 
+  pinMode(1, OUTPUT); // pwm2 
 
+  Wire.onReceive(parseMsg); //call parseMsg when message is received
 }
 
-void parseMsg(int msg) {
+void parseMsg(int bytesLeft) {
+  
+  msg = 0; //reset as 0 everytime msg is received
+
+ //Wire.available() returns 0 initially because master checks validity of slave 
+ //actually value comes after
+ if (Wire.available() != 0) {
+   msg = Wire.read(); //read one byte from buffer. Message should only be one byte.
+ }
 
  switch (msg) {
     case 0:
@@ -92,8 +95,7 @@ void parseMsg(int msg) {
     case 15:
       createPWM(true, 3750);
       break;
-    default: //else do nothing
-      createPWM(false, 0);
+    default: //else do nothing; will be contacted through initial bus scan
       break;
 
     return;
@@ -103,23 +105,26 @@ void parseMsg(int msg) {
 }
 
 void createPWM(bool enable, int frequency) { //set frequencies
-
+  
   if (enable) {
     digitalWrite(enablePin, HIGH);
   } else {
     digitalWrite(enablePin, LOW);
   }
+  
+  if (frequency == 0) { //avoid divide by zero
+    threshold = 0;
+    buffer = 0;
+  }
 
-  threshold = (int) (1000000 / frequency);
-  buffer = threshold/5;
-
+  else {
+    threshold = (1000000 / frequency);
+    buffer = threshold/5; // possible error with division? 
+  }
+  
 }
 
 void loop() {
-
-  int msg = Wire.read();
-  parseMsg(msg);
-
 
   us = micros();
   us2 = us + threshold/2;
